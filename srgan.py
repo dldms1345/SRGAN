@@ -25,6 +25,7 @@ criterion_GAN = nn.BCELoss()
 # 유클리드 거리(Ihr을 vgg에, Ilr을 G에 넣은 결과를 vgg에)(MSE)
 criterion_content = nn.MSELoss()
 
+pre_G_optimizer = Adam(G.parameters(), lr=0.0001, betas=(0.9, 0.999))
 G_optimizer = Adam(G.parameters(), lr=0.00001, betas=(0.9, 0.999))
 D_optimizer = Adam(D.parameters(), lr=0.00001, betas=(0.9, 0.999))
 
@@ -32,11 +33,31 @@ dataset = ImageDataset(crop_size=96, scale_factor=4, hr_root='/home/dataset/DIV2
 dataloader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=4)
 
 # pretrained data?
+pre_epoch = 30
+for epoch in range(pre_epoch):
+    print('Pretrain Epoch {}/{}'.format(epoch, pre_epoch - 1))
+    print('-' * 10)
+
+    for i, imgs in enumerate(dataloader):
+        # Configure model input
+        lr_imgs = Variable(imgs[0]).to(device)
+        hr_imgs = Variable(imgs[1]).to(device)
+
+        ### train Generator
+        G_optimizer.zero_grad()
+        G_loss = criterion_content(G(lr_imgs), hr_imgs)
+
+        G_loss.backward()
+        G_optimizer.step()
+
+
+    fake_imgs_ = make_grid(G(lr_imgs), nrow=1, normalize=True)
+    save_image(fake_imgs_, "images/pre%d.png" % i, normalize=False)
 # scheduler
 
 # Training
 # *The number of batches is equal to number of iterations for one epoch.
-total_epochs = 150
+total_epochs = 30
 for epoch in range(total_epochs):
     print('Epoch {}/{}'.format(epoch, total_epochs - 1))
     print('-' * 10)
@@ -53,7 +74,7 @@ for epoch in range(total_epochs):
         fake_imgs = G(lr_imgs)
         
         fake_imgs_ = make_grid(fake_imgs, nrow=1, normalize=True)
-        save_image(fake_imgs_, "images/tmp/%d.png" % i, normalize=False)
+        save_image(fake_imgs_, "images/temp/%d.png" % i, normalize=False)
         # print(fake_imgs.size())
 
         # 각 fake image의 점수(tanh)
