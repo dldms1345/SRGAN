@@ -67,8 +67,7 @@ class Generator(nn.Module):
         self.upsample_blocks = nn.Sequential(*upsample_blocks)
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 3, kernel_size=9, padding=4),
-            nn.Tanh())
+            nn.Conv2d(64, 3, kernel_size=9, padding=4))
 
     def forward(self, x):
         out1 = self.conv1(x)
@@ -76,7 +75,8 @@ class Generator(nn.Module):
         out2 = self.conv2(res_out)
         out = out1 + out2
         out = self.upsample_blocks(out)
-        return self.conv3(out)
+        out = self.conv3(out)
+        return (torch.tanh(out) + 1) / 2    # 0~1
 
 
 class Discriminator(nn.Module):
